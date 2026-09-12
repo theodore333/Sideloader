@@ -1,0 +1,37 @@
+# Native Windows build of the CLI (the upstream workflow cross-compiles from
+# Ubuntu and its Windows toolchain step currently fails).
+name: CLI build (Windows, native)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: dlang-community/setup-dlang@v1
+        with:
+          compiler: ldc-1.34.0
+
+      - name: Write version file
+        uses: ./.github/actions/write-version-file
+
+      - name: Build CLI
+        shell: bash
+        run: dub build -b release-debug --compiler=ldc2 --arch x86_64 :cli-frontend
+
+      - name: List output
+        shell: bash
+        run: ls -la bin/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sideloader-cli-x86_64-windows-native
+          path: bin/*
