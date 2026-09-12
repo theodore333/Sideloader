@@ -113,6 +113,35 @@ void sideloadFull(
             appId.features = developer.updateAppId!iOS(team, appId, dict(AppIdFeatures.appGroup, true)).unwrap();
         }
     }
+    // HealthKit: Apple allows it for free (personal) teams, but nobody
+  asks for it. If the
+      // main app declares the entitlement, enable the feature so the team
+  provisioning profile
+      // (and therefore the signature, which copies the profile's
+  entitlements) carries it.
+      if (appDeclaresHealthKit(app)) {
+          foreach (ref appId; appIds) {
+              if (appId.identifier != mainAppIdStr) continue;
+              bool healthKitEnabled = false;
+              try {
+                  healthKitEnabled =
+  appId.features[AppIdFeatures.healthKit].boolean().native();
+              } catch (Exception) {
+                  healthKitEnabled = false;
+              }
+              if (!healthKitEnabled) {
+                  log.info("Enabling HealthKit for the App ID...");
+                  try {
+                      appId.features = developer.updateAppId!iOS(team,
+  appId, dict(AppIdFeatures.healthKit, true)).unwrap();
+                      log.info("OK.");
+                  } catch (Exception e) {
+                      log.warnF!"Could not enable HealthKit (%s); continuing
+  without it."(e.msg);
+                  }
+              }
+          }
+      }
 
     // create an app group for it if needed
     progressCallback(5 / STEP_COUNT, "Creating an application group");
@@ -252,3 +281,28 @@ class AppInstallationException: Exception {
         super(format!"Cannot install the application on the device! %s: %s (%d)"(error, description, detail), file, line);
     }
 }
+
+/// True when the app asks for com.apple.developer.healthkit: either an
+  entitlements file in the
+  /// bundle mentions it, or (ad-hoc signed builds) the main executable's
+  signature blob does.
+  bool appDeclaresHealthKit(Application app) {
+      try {
+          foreach (entry; file.dirEntries(app.bundleDir,
+  file.SpanMode.shallow)) {
+              if (!entry.isFile) continue;
+              if (entry.name.endsWith(".entitlements") ||
+  entry.name.endsWith(".xcent")) {
+                  if ((cast(string)
+  file.read(entry.name)).canFind("com.apple.developer.healthkit")) return
+  true;
+              }
+          }
+          auto exe =
+  app.bundleDir.buildPath(app.appInfo["CFBundleExecutable"].str().native());
+          if (file.exists(exe) && (cast(string)
+  file.read(exe)).canFind("com.apple.developer.healthkit")) return true;
+      } catch (Exception) {
+      }
+      return false;
+  }
