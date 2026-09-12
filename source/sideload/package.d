@@ -113,12 +113,6 @@ void sideloadFull(
             appId.features = developer.updateAppId!iOS(team, appId, dict(AppIdFeatures.appGroup, true)).unwrap();
         }
     }
-    // HealthKit: Apple allows it for free (personal) teams, but nobody
-  asks for it. If the
-      // main app declares the entitlement, enable the feature so the team
-  provisioning profile
-      // (and therefore the signature, which copies the profile's
-  entitlements) carries it.
       if (appDeclaresHealthKit(app)) {
           foreach (ref appId; appIds) {
               if (appId.identifier != mainAppIdStr) continue;
@@ -282,10 +276,6 @@ class AppInstallationException: Exception {
     }
 }
 
-/// True when the app asks for com.apple.developer.healthkit: either an
-  entitlements file in the
-  /// bundle mentions it, or (ad-hoc signed builds) the main executable's
-  signature blob does.
   bool appDeclaresHealthKit(Application app) {
       try {
           foreach (entry; file.dirEntries(app.bundleDir,
