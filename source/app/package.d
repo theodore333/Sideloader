@@ -78,7 +78,7 @@ ProvisioningData initializeADI(string configurationPath) {
         import std.range;
         import std.uni;
         import std.uuid;
-        device.serverFriendlyDescription = "<MacBookPro13,2> <macOS;13.1;22C65> <com.apple.AuthKit/1 (com.apple.dt.Xcode/3594.4.19)>";
+        device.serverFriendlyDescription = "<MacBookPro13,2> <macOS;13.1;22C65> <com.apple.AuthKit/1 (com.apple.akd/1.0)>";
         device.uniqueDeviceIdentifier = randomUUID().toString().toUpper();
         device.adiIdentifier = (cast(ubyte[]) rndGen.take(2).array()).toHexString().toLower();
         device.localUserUUID = (cast(ubyte[]) rndGen.take(8).array()).toHexString().toUpper();
